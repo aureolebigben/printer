@@ -12,7 +12,7 @@ import (
 	"unsafe"
 )
 
-//go:generate go run mksyscall_windows.go -output zapi.go printer.go
+//go:generate mkwinsyscall -output zapi.go printer.go
 
 type DOC_INFO_1 struct {
 	DocName    *uint16
