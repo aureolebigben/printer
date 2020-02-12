@@ -1,4 +1,4 @@
-module printer
+module github.com/aureolebigben/printer
 
 go 1.13
 
