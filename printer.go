@@ -28,6 +28,10 @@ type PRINTER_INFO_5 struct {
 	TransmissionRetryTimeout uint32
 }
 
+type PRINTER_INFO_6 struct {
+	Status uint32
+}
+
 type DRIVER_INFO_8 struct {
 	Version                  uint32
 	Name                     *uint16
@@ -106,6 +110,7 @@ const (
 //sys	StartPagePrinter(h syscall.Handle) (err error) = winspool.StartPagePrinter
 //sys	EndPagePrinter(h syscall.Handle) (err error) = winspool.EndPagePrinter
 //sys	EnumPrinters(flags uint32, name *uint16, level uint32, buf *byte, bufN uint32, needed *uint32, returned *uint32) (err error) = winspool.EnumPrintersW
+//sys   GetPrinter(h syscall.Handle, level uint32, buf *byte, bufN uint32, needed *uint32) (err error) = winspool.GetPrinterW
 //sys	GetPrinterDriver(h syscall.Handle, env *uint16, level uint32, di *byte, n uint32, needed *uint32) (err error) = winspool.GetPrinterDriverW
 //sys	EnumJobs(h syscall.Handle, firstJob uint32, noJobs uint32, level uint32, buf *byte, bufN uint32, bytesNeeded *uint32, jobsReturned *uint32) (err error) = winspool.EnumJobsW
 
@@ -391,4 +396,25 @@ func (p *Printer) EndPage() error {
 
 func (p *Printer) Close() error {
 	return ClosePrinter(p.h)
+}
+
+// GetStatus return the printer status
+func (p *Printer) GetStatus() (*PRINTER_INFO_6, error) {
+	var needed uint32
+	buf := make([]byte, 1)
+
+	err := GetPrinter(p.h, 6, &buf[0], uint32(len(buf)), &needed)
+
+	if err != nil {
+		if err != syscall.ERROR_INSUFFICIENT_BUFFER {
+			return nil, err
+		}
+		buf = make([]byte, needed)
+		err := GetPrinter(p.h, 6, &buf[0], uint32(len(buf)), &needed)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return (*PRINTER_INFO_6)(unsafe.Pointer(&buf[0])), nil
 }
