@@ -158,7 +158,11 @@ type Printer struct {
 func Open(name string) (*Printer, error) {
 	var p Printer
 	// TODO: implement pDefault parameter
-	err := OpenPrinter(&(syscall.StringToUTF16(name))[0], &p.h, 0)
+	utf16Name, err := syscall.UTF16FromString(name)
+	if err != nil {
+		return nil, err
+	}
+	err = OpenPrinter(&(utf16Name)[0], &p.h, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -328,10 +332,22 @@ func (p *Printer) DriverInfo() (*DriverInfo, error) {
 }
 
 func (p *Printer) StartDocument(name, datatype string) error {
+	var utf16Name, utf16Datatype []uint16
+
+	utf16Name, err := syscall.UTF16FromString(name)
+	if err != nil {
+		return err
+	}
+
+	utf16Datatype, err = syscall.UTF16FromString(datatype)
+	if err != nil {
+		return err
+	}
+
 	d := DOC_INFO_1{
-		DocName:    &(syscall.StringToUTF16(name))[0],
+		DocName:    &(utf16Name)[0],
 		OutputFile: nil,
-		Datatype:   &(syscall.StringToUTF16(datatype))[0],
+		Datatype:   &(utf16Datatype)[0],
 	}
 	return StartDocPrinter(p.h, 1, &d)
 }
